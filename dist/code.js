@@ -1,7 +1,7 @@
 (() => {
   // widget-src/code.tsx
   var { widget, showUI, ui } = figma;
-  var { AutoLayout, Rectangle, Frame } = widget;
+  var { AutoLayout, Rectangle, Frame, usePropertyMenu } = widget;
   var Note;
   (function(Note2) {
     Note2["C"] = "C";
@@ -16,6 +16,7 @@
     Note2["A"] = "A";
     Note2["ASharp"] = "A#";
     Note2["B"] = "B";
+    Note2["HighC"] = "HighC";
   })(Note || (Note = {}));
   function Widget() {
     const sharpNotes = [
@@ -32,18 +33,30 @@
       Note.F,
       Note.G,
       Note.A,
-      Note.B
+      Note.B,
+      Note.HighC
     ];
-    function openUI(sound, options = { height: 300 }) {
+    function openUI(intent, sound, options = { height: 300 }) {
       return new Promise((resolve) => {
         showUI(__html__, options);
-        const data = { sound };
+        const data = { intent, sound };
         ui.postMessage(data);
         ui.once("message", () => {
           resolve();
         });
       });
     }
+    usePropertyMenu([
+      {
+        tooltip: "Play",
+        propertyName: "play",
+        itemType: "action"
+      }
+    ], ({ propertyName }) => {
+      if (propertyName === "play") {
+        return openUI("keyboard");
+      }
+    });
     return /* @__PURE__ */ figma.widget.h(Frame, {
       width: 900,
       height: 550
@@ -63,7 +76,7 @@
       stroke: "#000000",
       strokeWidth: 4,
       cornerRadius: 8,
-      onClick: () => openUI(note, { visible: false })
+      onClick: () => openUI("play", note, { visible: false })
     }))), sharpNotes.map(({ note, left }, ind) => /* @__PURE__ */ figma.widget.h(AutoLayout, {
       direction: "horizontal",
       horizontalAlignItems: "start",
@@ -73,7 +86,7 @@
       height: 300,
       fill: "#000000",
       cornerRadius: 8,
-      onClick: () => openUI(note, { visible: false })
+      onClick: () => openUI("play", note, { visible: false })
     }))));
   }
   widget.register(Widget);

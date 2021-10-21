@@ -1,5 +1,5 @@
 const { widget, showUI, ui } = figma;
-const { AutoLayout, Rectangle, Frame } = widget;
+const { AutoLayout, Rectangle, Frame, usePropertyMenu } = widget;
 
 enum Note {
   C = "C",
@@ -14,9 +14,11 @@ enum Note {
   A = "A",
   ASharp = "A#",
   B = "B",
+  HighC = "HighC"
 }
 
 interface Message {
+  intent: "play" | "keyboard";
   sound: Note;
 }
 
@@ -36,13 +38,18 @@ function Widget() {
     Note.G,
     Note.A,
     Note.B,
+    Note.HighC
   ];
 
-  function openUI(sound: Note, options: ShowUIOptions = { height: 300 }) {
+  function openUI(
+    intent: Message["intent"],
+    sound?: Note,
+    options: ShowUIOptions = { height: 300 }
+  ) {
     return new Promise<void>((resolve) => {
       showUI(__html__, options);
 
-      const data: Message = { sound };
+      const data: Message = { intent, sound };
       ui.postMessage(data);
 
       ui.once("message", () => {
@@ -51,6 +58,21 @@ function Widget() {
     });
   }
 
+  usePropertyMenu(
+    [
+      {
+        tooltip: "Play",
+        propertyName: "play",
+        itemType: "action",
+      },
+    ],
+    ({ propertyName }) => {
+      if (propertyName === "play") {
+       return openUI("keyboard");
+      }
+    }
+  );
+
   return (
     <Frame width={900} height={550}>
       <AutoLayout
@@ -58,7 +80,7 @@ function Widget() {
         horizontalAlignItems="start"
         verticalAlignItems="center"
         height="hug-contents"
-        padding={{left: 8}}
+        padding={{ left: 8 }}
         fill="#FFFFFF"
         spacing={12}
       >
@@ -71,7 +93,7 @@ function Widget() {
             stroke="#000000"
             strokeWidth={4}
             cornerRadius={8}
-            onClick={() => openUI(note, { visible: false })}
+            onClick={() => openUI("play", note, { visible: false })}
           />
         ))}
       </AutoLayout>
@@ -86,7 +108,7 @@ function Widget() {
             height={300}
             fill="#000000"
             cornerRadius={8}
-            onClick={() => openUI(note, { visible: false })}
+            onClick={() => openUI("play", note, { visible: false })}
           />
         </AutoLayout>
       ))}
