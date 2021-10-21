@@ -1,7 +1,7 @@
 (() => {
   // widget-src/code.tsx
   var { widget, showUI, ui } = figma;
-  var { AutoLayout, Rectangle, Frame, usePropertyMenu } = widget;
+  var { AutoLayout, Rectangle, Frame, usePropertyMenu, useSyncedState, Text, useEffect } = widget;
   var Note;
   (function(Note2) {
     Note2["C"] = "C";
@@ -19,6 +19,7 @@
     Note2["HighC"] = "HighC";
   })(Note || (Note = {}));
   function Widget() {
+    const [activeNote, setActiveNote] = useSyncedState("activeNote", null);
     const sharpNotes = [
       { note: Note.CSharp, left: 50 },
       { note: Note.DSharp, left: 170 },
@@ -39,13 +40,23 @@
     function openUI(intent, sound, options = { height: 300 }) {
       return new Promise((resolve) => {
         showUI(__html__, options);
+        if (sound) {
+          setActiveNote(sound);
+        }
         const data = { intent, sound };
         ui.postMessage(data);
-        ui.once("message", () => {
-          resolve();
-        });
       });
     }
+    useEffect(() => {
+      ui.onmessage = (message) => {
+        if (message.type === "keyboard") {
+          setActiveNote(message.note);
+        }
+        if (message.type === "close") {
+          ui.close();
+        }
+      };
+    });
     usePropertyMenu([
       {
         tooltip: "Play",
@@ -72,7 +83,7 @@
       key: ind,
       width: 100,
       height: 500,
-      fill: "#ffffff",
+      fill: activeNote === note ? "#A5B4FC" : "#FFFFFF",
       stroke: "#000000",
       strokeWidth: 4,
       cornerRadius: 8,
@@ -84,7 +95,7 @@
     }, /* @__PURE__ */ figma.widget.h(Rectangle, {
       width: 90,
       height: 300,
-      fill: "#000000",
+      fill: activeNote === note ? "#A5B4FC" : "#000000",
       cornerRadius: 8,
       onClick: () => openUI("play", note, { visible: false })
     }))));

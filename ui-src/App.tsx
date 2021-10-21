@@ -53,14 +53,20 @@ const noteMapping: { [sound: string]: string } = {
 
 function App() {
   const data = useDataFromWidget<Message>();
-  console.log(data);
 
   useEffect(() => {
     if (!data) return;
 
     function onKeyPress(e: KeyboardEvent) {
       if (!keyToNote[e.key]) return;
-      
+
+      parent.postMessage(
+        {
+          pluginMessage: { type: "keyboard", note: keyToNote[e.key] },
+        },
+        "*"
+      );
+
       const audio = new Audio();
       audio.src = noteMapping[keyToNote[e.key]];
       audio.play();
@@ -112,7 +118,11 @@ function App() {
     }
   }, [data]);
 
-  return <div className="App"></div>;
+  return (
+    <div className="App">
+      <div>Use your keyboard to play notes!</div>
+    </div>
+  );
 }
 
 export default App;

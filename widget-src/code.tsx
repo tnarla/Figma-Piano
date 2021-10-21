@@ -1,5 +1,6 @@
 const { widget, showUI, ui } = figma;
-const { AutoLayout, Rectangle, Frame, usePropertyMenu } = widget;
+const { AutoLayout, Rectangle, Frame, usePropertyMenu, useSyncedState, Text, useEffect } =
+  widget;
 
 enum Note {
   C = "C",
@@ -14,7 +15,7 @@ enum Note {
   A = "A",
   ASharp = "A#",
   B = "B",
-  HighC = "HighC"
+  HighC = "HighC",
 }
 
 interface Message {
@@ -23,6 +24,11 @@ interface Message {
 }
 
 function Widget() {
+  const [activeNote, setActiveNote] = useSyncedState<Note | null>(
+    "activeNote",
+    null
+  );
+
   const sharpNotes = [
     { note: Note.CSharp, left: 50 },
     { note: Note.DSharp, left: 170 },
@@ -38,7 +44,7 @@ function Widget() {
     Note.G,
     Note.A,
     Note.B,
-    Note.HighC
+    Note.HighC,
   ];
 
   function openUI(
@@ -48,15 +54,32 @@ function Widget() {
   ) {
     return new Promise<void>((resolve) => {
       showUI(__html__, options);
+      if (sound) {
+        setActiveNote(sound);
+      }
 
       const data: Message = { intent, sound };
       ui.postMessage(data);
 
-      ui.once("message", () => {
-        resolve();
-      });
+      // ui.once("message", () => {
+      //   setActiveNote(null);
+      //   resolve();
+      // });
     });
   }
+
+  useEffect(() => {
+    ui.onmessage = (message) => {
+      if (message.type === "keyboard") {
+        setActiveNote(message.note);
+
+      }
+
+      if (message.type === "close") {
+        ui.close();
+      }
+    };
+  });
 
   usePropertyMenu(
     [
@@ -68,13 +91,15 @@ function Widget() {
     ],
     ({ propertyName }) => {
       if (propertyName === "play") {
-       return openUI("keyboard");
+        return openUI("keyboard");
       }
     }
   );
 
   return (
     <Frame width={900} height={550}>
+      {/* <Text>🎶 Does this work</Text> */}
+
       <AutoLayout
         direction="horizontal"
         horizontalAlignItems="start"
@@ -89,7 +114,7 @@ function Widget() {
             key={ind}
             width={100}
             height={500}
-            fill="#ffffff"
+            fill={activeNote === note ? "#A5B4FC" : "#FFFFFF"}
             stroke="#000000"
             strokeWidth={4}
             cornerRadius={8}
@@ -106,7 +131,7 @@ function Widget() {
           <Rectangle
             width={90}
             height={300}
-            fill="#000000"
+            fill={activeNote === note ? "#A5B4FC" : "#000000"}
             cornerRadius={8}
             onClick={() => openUI("play", note, { visible: false })}
           />
