@@ -84,7 +84,7 @@ function App() {
     if (data.intent === "keyboard") {
       window.addEventListener("keypress", onKeyPress);
     }
-
+    
     return () => {
       window.removeEventListener("keypress", onKeyPress);
     };
